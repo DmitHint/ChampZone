@@ -1,0 +1,12 @@
+spring:
+  cloud:
+    gateway:
+      routes:
+        - id: coach-service
+          uri: http://coach-service:8082
+          predicates:
+            - Path=/coach/**
+        - id: training-service
+          uri: http://training-service:8083
+          predicates:
+            - Path=/training/**
