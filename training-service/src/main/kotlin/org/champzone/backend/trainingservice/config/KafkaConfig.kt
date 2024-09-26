@@ -22,10 +22,19 @@ class KafkaConfig {
             ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to "kafka:9092",
             ConsumerConfig.GROUP_ID_CONFIG to "group_id",
             ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
-            ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to JsonDeserializer::class.java
+            ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to JsonDeserializer::class.java,
         )
-        return DefaultKafkaConsumerFactory(config, StringDeserializer(), ErrorHandlingDeserializer(JsonDeserializer(
-            TrainingRequest::class.java)))
+        val deserializer = JsonDeserializer(TrainingRequest::class.java).apply {
+            addTrustedPackages("org.champzone.backend.coachservice.model", "org.champzone.backend.trainingservice.model")
+            setRemoveTypeHeaders(false)
+            setUseTypeMapperForKey(true)
+        }
+
+        return DefaultKafkaConsumerFactory(
+            config,
+            StringDeserializer(),
+            ErrorHandlingDeserializer(deserializer)
+        )
     }
 
     @Bean

@@ -16,5 +16,5 @@ CREATE TABLE training
 (
     id       UUID PRIMARY KEY NOT NULL,
     name     VARCHAR(100),
-    coach_id UUID REFERENCES coach_service_db.coach (id)
+    coach_id UUID
 );

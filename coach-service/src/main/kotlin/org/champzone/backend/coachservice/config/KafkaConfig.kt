@@ -17,7 +17,7 @@ import org.springframework.kafka.annotation.EnableKafka
 class KafkaConfig {
 
     @Bean
-    fun producerFactory(): ProducerFactory<String, Any> {
+    fun producerFactory(): ProducerFactory<String, TrainingRequest> {
         val config = mapOf(
             ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to "kafka:9092",
             ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
@@ -27,7 +27,7 @@ class KafkaConfig {
     }
 
     @Bean
-    fun kafkaTemplate(): KafkaTemplate<String, Any> {
+    fun kafkaTemplate(): KafkaTemplate<String, TrainingRequest> {
         return KafkaTemplate(producerFactory())
     }
 }
