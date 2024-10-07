@@ -31,11 +31,12 @@ class CoachService(
         coachProducer.sendCancelTrainingRequest(trainingRequest)
     }
 
-    fun createCoach(firstName: String, lastName: String, email: String): Coach {
+    fun createCoach(firstName: String, lastName: String, email: String, rating: Double): Coach {
         val coach = Coach(
             firstName = firstName,
             lastName = lastName,
-            email = email
+            email = email,
+            rating = rating,
         )
         return coachRepository.save(coach)
     }

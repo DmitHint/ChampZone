@@ -23,7 +23,7 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
-      - "5432:5432"
+      - "6543:5432"
     volumes:
       - ./dbscripts:/docker-entrypoint-initdb.d/
 
@@ -47,13 +47,18 @@ services:
   #      - internal_network
 
 
-  #  api-gateway:
-  #    build: ./api-gateway
-  #    ports:
-  #      - "8080:8080"
-  #    depends_on:
-  #      - training-service
-  #      - coach-service
+  api-gateway:
+    build: ./api-gateway
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-server:5432/api_gateway_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+    ports:
+      - "8888:8080"
+    depends_on:
+      - training-service
+      - coach-service
+      - client-service
 
 
   coach-service:
@@ -79,3 +84,57 @@ services:
     depends_on:
       - kafka
       - postgres-server
+
+  client-service:
+    build: ./client-service
+    ports:
+      - "8084:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-server:5432/client_service_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+    depends_on:
+      - kafka
+      - postgres-server
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0.0
+    environment:
+        KEYCLOAK_ADMIN: admin
+        #      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+        KEYCLOAK_ADMIN_PASSWORD: admin
+        KC_HTTP_PORT: 8080
+        KC_HOSTNAME_URL: http://localhost:8080
+        KC_HOSTNAME_ADMIN_URL: http://localhost:8080
+        KC_HOSTNAME_STRICT_BACKCHANNEL: true
+        #KC_HOSTNAME_DEBUG: true
+        KC_HTTP_RELATIVE_PATH: /
+        KC_HTTP_ENABLED: true
+        KC_HEALTH_ENABLED: true
+        KC_METRICS_ENABLED: true
+        #KC_LOG_LEVEL: DEBUG
+    command:
+      - start-dev
+    ports:
+      - 8080:8080
+#    depends_on:
+#      - keycloak-db
+    healthcheck:
+      test: ['CMD-SHELL', '[ -f /tmp/HealthCheck.java ] || echo "public class HealthCheck { public static void main(String[] args) throws java.lang.Throwable { System.exit(java.net.HttpURLConnection.HTTP_OK == ((java.net.HttpURLConnection)new java.net.URL(args[0]).openConnection()).getResponseCode() ? 0 : 1); } }" > /tmp/HealthCheck.java && java /tmp/HealthCheck.java http://localhost:8080/auth/health/live']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+#  keycloak-db:
+#    image: postgres:16
+#    environment:
+#      POSTGRES_DB: keycloak
+#      POSTGRES_USER: keycloak
+#      POSTGRES_PASSWORD: password
+#    ports:
+#      - 5433:5432
+#    volumes:
+#      - keycloak_data:/var/lib/postgresql/data
+
+volumes:
+  keycloak_data:

@@ -1,13 +1,11 @@
-FROM gradle:8.7.0-jdk21-alpine AS builder
+FROM eclipse-temurin:21-jdk-alpine
+
 WORKDIR /app
 
-COPY . /app/.
+COPY . .
 
-RUN gradle clean build --no-daemon
+RUN ./gradlew clean build -x test --no-daemon
 
-FROM eclipse-temurin:21-jre-alpine
-WORKDIR /app
-
-COPY --from=builder /app/build/libs/*.jar /app/app.jar
+COPY build/libs/*.jar app.jar
 
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]

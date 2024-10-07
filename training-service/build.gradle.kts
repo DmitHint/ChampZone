@@ -6,7 +6,7 @@ plugins {
     kotlin("plugin.jpa") version "2.0.10"
 }
 
-group = "org.example"
+group = "org.champzone.backend"
 version = "1.0-SNAPSHOT"
 
 repositories {

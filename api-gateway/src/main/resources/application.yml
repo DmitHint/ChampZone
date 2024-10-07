@@ -1,7 +1,20 @@
 spring:
+#  autoconfigure:
+#    exclude:
+#      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
+#      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+  datasource:
+    url: jdbc:postgresql://postgres-server:5432/api_gateway_db
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
   cloud:
     gateway:
       routes:
+        - id: client-service
+          uri: http://client-service:8081
+          predicates:
+            - Path=/client/**
         - id: coach-service
           uri: http://coach-service:8082
           predicates:

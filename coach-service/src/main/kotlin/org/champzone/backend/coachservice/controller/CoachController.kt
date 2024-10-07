@@ -3,8 +3,8 @@ package org.champzone.backend.coachservice.controller
 import org.champzone.backend.coachservice.model.Coach
 import org.champzone.backend.coachservice.service.CoachService
 import org.springframework.http.ResponseEntity
-import org.springframework.web.bind.annotation.*
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.web.bind.annotation.*
 import java.util.UUID
 
 
@@ -16,10 +16,11 @@ class CoachController @Autowired constructor(private val coachService: CoachServ
     fun createCoach(
         @RequestParam firstName: String,
         @RequestParam lastName: String,
-        @RequestParam email: String
+        @RequestParam email: String,
+        @RequestParam rating: Double
     ): ResponseEntity<Coach> {
         return try {
-            val coach = coachService.createCoach(firstName, lastName, email)
+            val coach = coachService.createCoach(firstName, lastName, email, rating)
             ResponseEntity.ok(coach)
         } catch (e: Exception) {
             ResponseEntity.badRequest().body(null)
