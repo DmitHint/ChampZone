@@ -9,6 +9,8 @@ services:
       - "9092:9092"
     depends_on:
       - zookeeper
+    networks:
+      - app-network
 
   zookeeper:
     image: confluentinc/cp-zookeeper:latest
@@ -16,6 +18,8 @@ services:
       ZOOKEEPER_CLIENT_PORT: 2181
     ports:
       - "2181:2181"
+    networks:
+      - app-network
 
   postgres-server:
     image: postgres:latest
@@ -26,6 +30,8 @@ services:
       - "6543:5432"
     volumes:
       - ./dbscripts:/docker-entrypoint-initdb.d/
+    networks:
+      - app-network
 
   pgadmin:
     image: dpage/pgadmin4:latest
@@ -59,12 +65,14 @@ services:
       - training-service
       - coach-service
       - client-service
+    networks:
+      - app-network
 
 
   coach-service:
     build: ./coach-service
-    ports:
-      - "8082:8080"
+#    ports:
+#      - "8082:8080"
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-server:5432/coach_service_db
       SPRING_DATASOURCE_USERNAME: postgres
@@ -72,11 +80,13 @@ services:
     depends_on:
       - kafka
       - postgres-server
+    networks:
+      - app-network
 
   training-service:
     build: ./training-service
-    ports:
-      - "8083:8080"
+#    ports:
+#      - "8083:8080"
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-server:5432/training_service_db
       SPRING_DATASOURCE_USERNAME: postgres
@@ -84,11 +94,13 @@ services:
     depends_on:
       - kafka
       - postgres-server
+    networks:
+      - app-network
 
   client-service:
     build: ./client-service
-    ports:
-      - "8084:8080"
+#    ports:
+#      - "8084:8080"
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-server:5432/client_service_db
       SPRING_DATASOURCE_USERNAME: postgres
@@ -96,6 +108,8 @@ services:
     depends_on:
       - kafka
       - postgres-server
+    networks:
+      - app-network
 
   keycloak:
     image: quay.io/keycloak/keycloak:26.0.0
@@ -138,3 +152,7 @@ services:
 
 volumes:
   keycloak_data:
+
+networks:
+  app-network:
+    driver: bridge
