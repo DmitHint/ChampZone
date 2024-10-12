@@ -10,7 +10,7 @@ import java.util.UUID
 
 
 @RestController
-@RequestMapping("/coach")
+@RequestMapping("/api/v1/coach")
 class CoachController @Autowired constructor(
     private val coachService: CoachService,
     private val notificationService: NotificationClient

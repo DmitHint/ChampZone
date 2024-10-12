@@ -30,6 +30,11 @@ services:
       - "6543:5432"
     volumes:
       - ./dbscripts:/docker-entrypoint-initdb.d/
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - app-network
 
@@ -40,12 +45,18 @@ services:
     environment:
       PGADMIN_DEFAULT_EMAIL: ${EMAIL_USERNAME}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
+    networks:
+      - app-network
 
 
   frontend:
     build: ./frontend
     environment:
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+    ports:
+      - "3000:3000"
+    networks:
+      - app-network
 
   nginx:
     image: nginx:latest
@@ -55,6 +66,10 @@ services:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
     depends_on:
       - frontend
+      - api-gateway
+#      - coach-service
+#      - client-service
+#      - training-service
     networks:
       - app-network
 
@@ -76,8 +91,6 @@ services:
 
   coach-service:
     build: ./coach-service
-    expose:
-      - 8082
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-server:5432/coach_service_db
       SPRING_DATASOURCE_USERNAME: postgres
@@ -92,8 +105,6 @@ services:
 
   training-service:
     build: ./training-service
-    expose:
-      - 8083
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-server:5432/training_service_db
       SPRING_DATASOURCE_USERNAME: postgres
@@ -106,8 +117,6 @@ services:
 
   client-service:
     build: ./client-service
-    expose:
-      - 8084
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-server:5432/client_service_db
       SPRING_DATASOURCE_USERNAME: postgres
@@ -137,7 +146,6 @@ services:
     image: quay.io/keycloak/keycloak:26.0.0
     environment:
         KEYCLOAK_ADMIN: admin
-        #      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
         KEYCLOAK_ADMIN_PASSWORD: admin
         KC_HTTP_PORT: 6060
         KC_HOSTNAME_URL: http://localhost:6060
@@ -153,13 +161,11 @@ services:
       - start-dev
     ports:
       - "6060:6060"
-#    depends_on:
-#      - keycloak-db
-    healthcheck:
-      test: ['CMD-SHELL', '[ -f /tmp/HealthCheck.java ] || echo "public class HealthCheck { public static void main(String[] args) throws java.lang.Throwable { System.exit(java.net.HttpURLConnection.HTTP_OK == ((java.net.HttpURLConnection)new java.net.URL(args[0]).openConnection()).getResponseCode() ? 0 : 1); } }" > /tmp/HealthCheck.java && java /tmp/HealthCheck.java http://localhost:6060/auth/health/live']
-      interval: 5s
-      timeout: 5s
-      retries: 20
+#    healthcheck:
+#      test: ['CMD-SHELL', '[ -f /tmp/HealthCheck.java ] || echo "public class HealthCheck { public static void main(String[] args) throws java.lang.Throwable { System.exit(java.net.HttpURLConnection.HTTP_OK == ((java.net.HttpURLConnection)new java.net.URL(args[0]).openConnection()).getResponseCode() ? 0 : 1); } }" > /tmp/HealthCheck.java && java /tmp/HealthCheck.java http://localhost:6060/auth/health/live']
+#      interval: 5s
+#      timeout: 5s
+#      retries: 20
 
 volumes:
   keycloak_data:

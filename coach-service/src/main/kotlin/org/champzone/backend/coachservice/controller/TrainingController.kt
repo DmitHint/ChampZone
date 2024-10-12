@@ -8,7 +8,7 @@ import java.util.UUID
 
 
 @RestController
-@RequestMapping("/coach/training")
+@RequestMapping("/api/v1/coach/training")
 class TrainingController @Autowired constructor(private val coachService: CoachService) {
 
     @PostMapping("/create")

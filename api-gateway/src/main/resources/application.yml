@@ -14,12 +14,12 @@ spring:
         - id: client-service
           uri: http://client-service:8080
           predicates:
-            - Path=/client/**
+            - Path=/api/v1/client/**
         - id: coach-service
           uri: http://coach-service:8080
           predicates:
-            - Path=/coach/**
+            - Path=/api/v1/coach/**
         - id: training-service
           uri: http://training-service:8080
           predicates:
-            - Path=/training/**
+            - Path=/api/v1/training/**

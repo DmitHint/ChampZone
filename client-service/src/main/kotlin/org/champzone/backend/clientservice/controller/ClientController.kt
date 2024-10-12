@@ -9,7 +9,7 @@ import java.util.UUID
 
 
 @RestController
-@RequestMapping("/client")
+@RequestMapping("/api/v1/client")
 class ClientController @Autowired constructor(private val clientService: ClientService) {
 
     @GetMapping("/all")
