@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+option go_package = "proto/generated;notification_service";
+
+service NotificationService {
+  rpc SendEmail (EmailRequest) returns (EmailResponse);
+}
+
+message EmailRequest {
+  string email = 1;
+  string message = 2;
+}
+
+message EmailResponse {
+  bool success = 1;
+  string error = 2;
+}
