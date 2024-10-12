@@ -21,3 +21,8 @@ spring:
     liquibase-schema: public
     database-change-log-lock-table: databasechangeloglock
     database-change-log-table: databasechangelog
+
+grpc:
+  notification-service:
+    host: ${GRPC_NOTIFICATION_SERVICE_HOST}
+    port: ${GRPC_NOTIFICATION_SERVICE_PORT}

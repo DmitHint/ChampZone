@@ -25,7 +25,7 @@ services:
     image: postgres:latest
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "6543:5432"
     volumes:
@@ -38,8 +38,8 @@ services:
     ports:
       - "5050:80"
     environment:
-      PGADMIN_DEFAULT_EMAIL: postgres
-      PGADMIN_DEFAULT_PASSWORD: postgres
+      PGADMIN_DEFAULT_EMAIL: ${EMAIL_USERNAME}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
 
 
   frontend:
@@ -64,7 +64,7 @@ services:
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-server:5432/api_gateway_db
       SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: postgres
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "8888:8080"
     depends_on:
@@ -74,15 +74,16 @@ services:
     networks:
       - app-network
 
-
   coach-service:
     build: ./coach-service
-#    ports:
-#      - "8082:8080"
+    expose:
+      - 8082
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-server:5432/coach_service_db
       SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: postgres
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      GRPC_NOTIFICATION_SERVICE_HOST: ${GRPC_NOTIFICATION_SERVICE_HOST}
+      GRPC_NOTIFICATION_SERVICE_PORT: ${GRPC_NOTIFICATION_SERVICE_PORT}
     depends_on:
       - kafka
       - postgres-server
@@ -91,12 +92,12 @@ services:
 
   training-service:
     build: ./training-service
-#    ports:
-#      - "8083:8080"
+    expose:
+      - 8083
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-server:5432/training_service_db
       SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: postgres
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
     depends_on:
       - kafka
       - postgres-server
@@ -105,17 +106,32 @@ services:
 
   client-service:
     build: ./client-service
-#    ports:
-#      - "8084:8080"
+    expose:
+      - 8084
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-server:5432/client_service_db
       SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: postgres
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
     depends_on:
       - kafka
       - postgres-server
     networks:
       - app-network
+
+  notification-service:
+    build: ./notification-service
+    environment:
+      MAIL_PROTOCOL: ${MAIL_PROTOCOL}
+      MAIL_HOST: ${MAIL_HOST}
+      MAIL_PORT: ${MAIL_PORT}
+      EMAIL_USERNAME: ${EMAIL_USERNAME}
+      EMAIL_PASSWORD: ${EMAIL_PASSWORD}
+      GRPC_SERVER_PORT: ${GRPC_NOTIFICATION_SERVICE_PORT}
+    expose:
+      - 50055
+    networks:
+      - app-network
+
 
   keycloak:
     image: quay.io/keycloak/keycloak:26.0.0
@@ -123,9 +139,9 @@ services:
         KEYCLOAK_ADMIN: admin
         #      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
         KEYCLOAK_ADMIN_PASSWORD: admin
-        KC_HTTP_PORT: 8080
-        KC_HOSTNAME_URL: http://localhost:8080
-        KC_HOSTNAME_ADMIN_URL: http://localhost:8080
+        KC_HTTP_PORT: 6060
+        KC_HOSTNAME_URL: http://localhost:6060
+        KC_HOSTNAME_ADMIN_URL: http://localhost:6060
         KC_HOSTNAME_STRICT_BACKCHANNEL: true
         #KC_HOSTNAME_DEBUG: true
         KC_HTTP_RELATIVE_PATH: /
@@ -136,25 +152,14 @@ services:
     command:
       - start-dev
     ports:
-      - 8080:8080
+      - "6060:6060"
 #    depends_on:
 #      - keycloak-db
     healthcheck:
-      test: ['CMD-SHELL', '[ -f /tmp/HealthCheck.java ] || echo "public class HealthCheck { public static void main(String[] args) throws java.lang.Throwable { System.exit(java.net.HttpURLConnection.HTTP_OK == ((java.net.HttpURLConnection)new java.net.URL(args[0]).openConnection()).getResponseCode() ? 0 : 1); } }" > /tmp/HealthCheck.java && java /tmp/HealthCheck.java http://localhost:8080/auth/health/live']
+      test: ['CMD-SHELL', '[ -f /tmp/HealthCheck.java ] || echo "public class HealthCheck { public static void main(String[] args) throws java.lang.Throwable { System.exit(java.net.HttpURLConnection.HTTP_OK == ((java.net.HttpURLConnection)new java.net.URL(args[0]).openConnection()).getResponseCode() ? 0 : 1); } }" > /tmp/HealthCheck.java && java /tmp/HealthCheck.java http://localhost:6060/auth/health/live']
       interval: 5s
       timeout: 5s
       retries: 20
-
-#  keycloak-db:
-#    image: postgres:16
-#    environment:
-#      POSTGRES_DB: keycloak
-#      POSTGRES_USER: keycloak
-#      POSTGRES_PASSWORD: password
-#    ports:
-#      - 5433:5432
-#    volumes:
-#      - keycloak_data:/var/lib/postgresql/data
 
 volumes:
   keycloak_data:
