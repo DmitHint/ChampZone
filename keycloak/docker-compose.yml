@@ -1,0 +1,142 @@
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: champzone_keycloak_db
+      POSTGRES_USER: champzone_keycloak
+      POSTGRES_PASSWORD: champzone_keycloak
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - keycloak-network
+    healthcheck:
+      test: ["CMD-SHELL", "psql -U champzone_keycloak -d champzone_keycloak_db -c 'SELECT 1;'"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    environment:
+      PGADMIN_DEFAULT_EMAIL: champzone@yandex.ru
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    networks:
+      - keycloak-network
+
+  keycloak:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/champzone_keycloak_db
+      KC_DB_USERNAME: champzone_keycloak
+      KC_DB_PASSWORD: champzone_keycloak
+      KC_HTTP_PORT: 6060
+      # KC_HTTP_ENABLED: true
+      KC_HTTP_ENABLED: false
+      KC_PROXY: edge
+      KC_HEALTH_ENABLED: true
+      KC_METRICS_ENABLED: true
+      KC_LOG_LEVEL: DEBUG
+      KC_HOSTNAME_STRICT_HTTPS: true
+      PROXY_ADDRESS_FORWARDING: false
+      KC_LOG_CONSOLE_COLOR: true
+    ports:
+      - "6060:6060"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - keycloak-network
+
+networks:
+  keycloak-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+
+
+#services:
+#  postgres:
+#    image: postgres:17
+#    environment:
+#      POSTGRES_DB: champzone_keycloak_db
+#      POSTGRES_USER: champzone_keycloak
+#      POSTGRES_PASSWORD: champzone_keycloak
+#    volumes:
+#      - postgres_data:/var/lib/postgresql/data
+#      # - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+#    networks:
+#      - keycloak-network
+#    healthcheck:
+#      test: ["CMD", "pg_isready", "-U", "champzone_keycloak"]
+#      interval: 10s
+#      timeout: 5s
+#      retries: 5
+#
+#  pgadmin:
+#    image: dpage/pgadmin4:latest
+#    environment:
+#      PGADMIN_DEFAULT_EMAIL: champzone@yandex.ru
+#      PGADMIN_DEFAULT_PASSWORD: admin
+#    ports:
+#      - "5050:80"
+#    depends_on:
+#      - postgres
+#    networks:
+#      - keycloak-network
+#
+#  keycloak:
+#    # image: quay.io/keycloak/keycloak:26.0.0
+#    image: quay.io/keycloak/keycloak:25.0.0
+#    environment:
+#      KEYCLOAK_ADMIN: admin
+#      KEYCLOAK_ADMIN_PASSWORD: admin
+#      KC_DB: postgres
+#      KC_DB_URL: jdbc:postgresql://postgres:5432/champzone_keycloak_db
+#      KC_DB_USERNAME: champzone_keycloak
+#      KC_DB_PASSWORD: champzone_keycloak
+#      KC_HTTP_PORT: 6060
+#      # KC_HTTP_ENABLED: true
+#      KC_HTTP_ENABLED: false
+#      KC_PROXY: edge
+#      KC_HEALTH_ENABLED: true
+#      KC_METRICS_ENABLED: true
+#      KC_LOG_LEVEL: DEBUG
+#      KC_HOSTNAME_STRICT_HTTPS: true
+#      PROXY_ADDRESS_FORWARDING: false
+#    command: start-dev
+#    ports:
+#      - "6060:6060"
+#    depends_on:
+#      postgres:
+#        condition: service_healthy
+#    networks:
+#      - keycloak-network
+#
+#  # nginx:
+#  #   image: nginx:latest
+#  #   volumes:
+#  #     - ./nginx.conf:/etc/nginx/nginx.conf:ro
+#  #   ports:
+#  #     - "80:80"
+#  #     - "443:443"
+#  #   depends_on:
+#  #     - keycloak
+#  #   networks:
+#  #     - keycloak-network
+#
+#networks:
+#  keycloak-network:
+#    driver: bridge
+#
+#volumes:
+#  postgres_data:
