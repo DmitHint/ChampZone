@@ -14,11 +14,12 @@ repositories {
 }
 
 dependencies {
-//    implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
-//    implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
+    implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
+    implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
+    implementation("org.springframework.boot:spring-boot-starter-security")
+    implementation("com.jayway.jsonpath:json-path:2.9.0")
+    implementation("jakarta.servlet:jakarta.servlet-api:6.0.0")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-//    implementation("org.springframework.boot:spring-boot-starter-security")
-//    implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("org.liquibase:liquibase-core")
     implementation("org.jetbrains.kotlin:kotlin-reflect")

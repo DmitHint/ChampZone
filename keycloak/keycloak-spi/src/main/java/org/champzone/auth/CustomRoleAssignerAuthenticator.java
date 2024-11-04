@@ -1,13 +1,12 @@
-package org.champzone;
+package org.champzone.auth;
 
+import org.jboss.logging.Logger;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-
-import org.jboss.logging.Logger;
 
 public class CustomRoleAssignerAuthenticator implements Authenticator {
 
@@ -19,7 +18,7 @@ public class CustomRoleAssignerAuthenticator implements Authenticator {
         String userRole = user.getFirstAttribute("userRole");
 
         if (userRole == null) {
-            logger.warn("User attribute 'user_role' is missing. Authentication failed.");
+            logger.warn("User attribute 'userRole' is missing. Authentication failed.");
             context.failure(AuthenticationFlowError.INVALID_USER);
             return;
         }

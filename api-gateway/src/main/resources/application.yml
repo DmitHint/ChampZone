@@ -1,13 +1,14 @@
 spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+#          issuer-uri: ${SPRING_KEYCLOAK_ISSUER_URL}
+          jwk-set-uri: ${SPRING_KEYCLOAK_CERTS_URL}
   autoconfigure:
     exclude:
       - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
       - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
-  #  datasource:
-  #    url: jdbc:postgresql://postgres-server:5432/api_gateway_db
-  #    username: postgres
-  #    password: postgres
-  #    driver-class-name: org.postgresql.Driver
   cloud:
     gateway:
       routes:
@@ -23,3 +24,11 @@ spring:
           uri: http://training-service:8080
           predicates:
             - Path=/api/v1/training/**
+
+  main:
+    allow-bean-definition-overriding: true
+
+logging:
+  level:
+    org.springframework.security: DEBUG
+    org.springframework.security.oauth2: DEBUG
