@@ -7,4 +7,4 @@ RUN mvn clean package
 FROM quay.io/keycloak/keycloak:25.0.0
 COPY --from=build /app/target/keycloak-spi-1.0.jar /opt/keycloak/providers/
 
-ENTRYPOINT ["/bin/kc.sh", "start-dev"]
+ENTRYPOINT ["/opt/keycloak/bin/kc.sh", "start-dev"]

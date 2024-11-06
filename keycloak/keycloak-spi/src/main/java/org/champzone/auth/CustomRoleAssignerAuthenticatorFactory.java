@@ -1,4 +1,4 @@
-package org.champzone;
+package org.champzone.auth;
 
 import org.keycloak.Config;
 import org.keycloak.authentication.Authenticator;

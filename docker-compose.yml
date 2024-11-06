@@ -10,7 +10,7 @@ services:
     depends_on:
       - zookeeper
     networks:
-      - app-network
+      - champzone-network
 
   zookeeper:
     image: confluentinc/cp-zookeeper:latest
@@ -19,7 +19,7 @@ services:
     ports:
       - "2181:2181"
     networks:
-      - app-network
+      - champzone-network
 
   postgres-server:
     image: postgres:latest
@@ -30,13 +30,14 @@ services:
       - "6543:5432"
     volumes:
       - ./dbscripts:/docker-entrypoint-initdb.d/
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
-      - app-network
+      - champzone-network
 
   pgadmin:
     image: dpage/pgadmin4:latest
@@ -46,32 +47,32 @@ services:
       PGADMIN_DEFAULT_EMAIL: ${EMAIL_USERNAME}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
     networks:
-      - app-network
+      - champzone-network
 
 
-  frontend:
-    build: ./frontend
-    environment:
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
-    ports:
-      - "3000:3000"
-    networks:
-      - app-network
+#  frontend:
+#    build: ./frontend
+#    environment:
+#      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+#    ports:
+#      - "3000:3000"
+#    networks:
+#      - champzone-network
 
-  nginx:
-    image: nginx:latest
-    ports:
-      - "8080:80"
-    volumes:
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf
-    depends_on:
-      - frontend
-      - api-gateway
-#      - coach-service
-#      - client-service
-#      - training-service
-    networks:
-      - app-network
+#  nginx:
+#    image: nginx:latest
+#    ports:
+#      - "8080:80"
+#    volumes:
+#      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+#    depends_on:
+##      - frontend
+#      - api-gateway
+##      - coach-service
+##      - client-service
+##      - training-service
+#    networks:
+#      - champzone-network
 
 
   api-gateway:
@@ -80,14 +81,18 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-server:5432/api_gateway_db
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+
+      SPRING_KEYCLOAK_ISSUER_URL: ${KEYCLOAK_ISSUER_URL}
+      SPRING_KEYCLOAK_CERTS_URL: ${KEYCLOAK_CERTS_URL}
     ports:
       - "8888:8080"
     depends_on:
-      - training-service
-      - coach-service
-      - client-service
+      - keycloak
+#      - training-service
+#      - coach-service
+#      - client-service
     networks:
-      - app-network
+      - champzone-network
 
   coach-service:
     build: ./coach-service
@@ -96,12 +101,16 @@ services:
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       GRPC_NOTIFICATION_SERVICE_HOST: ${GRPC_NOTIFICATION_SERVICE_HOST}
-      GRPC_NOTIFICATION_SERVICE_PORT: ${GRPC_NOTIFICATION_SERVICE_PORT}
+#      GRPC_NOTIFICATION_SERVICE_PORT: ${GRPC_NOTIFICATION_SERVICE_PORT}
+      GRPC_NOTIFICATION_SERVICE_PORT: ${GRPC_PORT}
+    expose:
+      - 8080
+      - ${GRPC_PORT}
     depends_on:
-      - kafka
+#      - kafka
       - postgres-server
     networks:
-      - app-network
+      - champzone-network
 
   training-service:
     build: ./training-service
@@ -110,10 +119,13 @@ services:
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
     depends_on:
-      - kafka
+#      - kafka
       - postgres-server
+    expose:
+      - 8080
+      - ${GRPC_PORT}
     networks:
-      - app-network
+      - champzone-network
 
   client-service:
     build: ./client-service
@@ -122,10 +134,10 @@ services:
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
     depends_on:
-      - kafka
+#      - kafka
       - postgres-server
     networks:
-      - app-network
+      - champzone-network
 
   notification-service:
     build: ./notification-service
@@ -135,41 +147,64 @@ services:
       MAIL_PORT: ${MAIL_PORT}
       EMAIL_USERNAME: ${EMAIL_USERNAME}
       EMAIL_PASSWORD: ${EMAIL_PASSWORD}
-      GRPC_SERVER_PORT: ${GRPC_NOTIFICATION_SERVICE_PORT}
+#      GRPC_SERVER_PORT: ${GRPC_NOTIFICATION_SERVICE_PORT}
+      GRPC_SERVER_PORT: ${GRPC_PORT}
     expose:
-      - 50055
+      - ${GRPC_PORT}
     networks:
-      - app-network
+      - champzone-network
 
 
   keycloak:
-    image: quay.io/keycloak/keycloak:26.0.0
+    build: ./keycloak
     environment:
-        KEYCLOAK_ADMIN: admin
-        KEYCLOAK_ADMIN_PASSWORD: admin
-        KC_HTTP_PORT: 6060
-        KC_HOSTNAME_URL: http://localhost:6060
-        KC_HOSTNAME_ADMIN_URL: http://localhost:6060
-        KC_HOSTNAME_STRICT_BACKCHANNEL: true
-        #KC_HOSTNAME_DEBUG: true
-        KC_HTTP_RELATIVE_PATH: /
-        KC_HTTP_ENABLED: true
-        KC_HEALTH_ENABLED: true
-        KC_METRICS_ENABLED: true
-        #KC_LOG_LEVEL: DEBUG
-    command:
-      - start-dev
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres-server:5432/keycloak_db
+      KC_DB_USERNAME: postgres
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD}
+      KC_HTTP_PORT: 6060
+      KC_HTTP_ENABLED: true
+#      KC_HTTP_ENABLED: false
+      KC_PROXY: edge
+      KC_HEALTH_ENABLED: true
+      KC_METRICS_ENABLED: true
+      KC_LOG_LEVEL: DEBUG
+#      KC_HOSTNAME_STRICT_HTTPS: true
+      PROXY_ADDRESS_FORWARDING: false
+      KC_LOG_CONSOLE_COLOR: true
     ports:
       - "6060:6060"
-#    healthcheck:
-#      test: ['CMD-SHELL', '[ -f /tmp/HealthCheck.java ] || echo "public class HealthCheck { public static void main(String[] args) throws java.lang.Throwable { System.exit(java.net.HttpURLConnection.HTTP_OK == ((java.net.HttpURLConnection)new java.net.URL(args[0]).openConnection()).getResponseCode() ? 0 : 1); } }" > /tmp/HealthCheck.java && java /tmp/HealthCheck.java http://localhost:6060/auth/health/live']
-#      interval: 5s
-#      timeout: 5s
-#      retries: 20
+    depends_on:
+      postgres-server:
+        condition: service_healthy
+    networks:
+      - champzone-network
+
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    networks:
+      - champzone-network
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "4000:4000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    networks:
+      - champzone-network
+
 
 volumes:
-  keycloak_data:
+  postgres_data:
 
 networks:
-  app-network:
+  champzone-network:
     driver: bridge
